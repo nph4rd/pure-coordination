@@ -11,7 +11,7 @@ class GameConfig:
         miscoordinate_payoff: Payoff when players choose different actions
     """
 
-    num_actions: int = 2
+    num_actions: int = 10
     coordinate_payoff: float = 1.0
     miscoordinate_payoff: float = 0.0
 

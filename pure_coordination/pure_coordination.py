@@ -17,14 +17,28 @@ class PureCoordinationEnv(vf.MultiAgentEnv):
     A simultaneous-move game where:
     - Both players choose an action without seeing the other's choice
     - Both get 1 if they coordinate (same action), 0 otherwise
-    - Actions are random letter strings, shuffled per player (no focal points)
+    - Actions are fixed letter strings, shuffled per player (no focal points)
     """
+
+    # Fixed set of 10 actions (deterministic, no randomness)
+    FIXED_ACTIONS = [
+        "qahf",
+        "trxc",
+        "kafn",
+        "afqo",
+        "fpva",
+        "usie",
+        "yicc",
+        "wpus",
+        "nzjo",
+        "vqwp",
+    ]
 
     def __init__(
         self,
         num_train_examples: int = 1000,
         num_eval_examples: int = 100,
-        num_actions: int = 2,
+        num_actions: int = 10,
         **kwargs,
     ):
         self.config = GameConfig(num_actions=num_actions)
@@ -71,17 +85,9 @@ class PureCoordinationEnv(vf.MultiAgentEnv):
             )
         )
 
-    def _generate_actions(self, seed: int) -> list[str]:
-        """Generate random action labels for a game (unshuffled base set)."""
-        rng = random.Random(seed)
-        letters = "abcdefghijklmnopqrstuvwxyz"
-
-        actions = set()
-        while len(actions) < self.config.num_actions:
-            word = "".join(rng.choices(letters, k=4))  # Fixed 4-character strings
-            actions.add(word)
-
-        return sorted(actions)  # Deterministic order for storage
+    def _generate_actions(self) -> list[str]:
+        """Return the fixed action labels for a game (unshuffled base set)."""
+        return self.FIXED_ACTIONS[: self.config.num_actions]
 
     def _shuffle_for_player(self, actions: list[str], seed: int, player_id: str) -> list[str]:
         """Shuffle actions differently for each player to remove positional focal points."""
@@ -93,13 +99,13 @@ class PureCoordinationEnv(vf.MultiAgentEnv):
 
     def _get_initial_observation(self, seed: int) -> str:
         """Generate the initial game observation for a given seed."""
-        actions = self._generate_actions(seed)
+        actions = self._generate_actions()
         action_list = ", ".join(actions)
         return f"Coordination game. Choose one action from: {action_list}"
 
     def _initialize_game(self, seed: int) -> State:
         """Create a fresh game state from a seed."""
-        actions = self._generate_actions(seed)
+        actions = self._generate_actions()
         return cast(
             State,
             {
@@ -229,14 +235,14 @@ def coordination_reward_func(parser, completion: Messages, **_kwargs) -> float:
 def load_environment(
     num_train_examples: int = 1000,
     num_eval_examples: int = 100,
-    num_actions: int = 2,
+    num_actions: int = 10,
 ) -> vf.Environment:
     """Load the Coordination Game environment.
 
     Args:
         num_train_examples: Number of training examples
         num_eval_examples: Number of evaluation examples
-        num_actions: Number of available actions (default: 2)
+        num_actions: Number of available actions (default: 10)
 
     Returns:
         Configured PureCoordinationEnv instance
